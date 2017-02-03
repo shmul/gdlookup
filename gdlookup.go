@@ -49,7 +49,9 @@ func locationByDate(date string,verbose bool,cont bool) {
 		}
 		return
 	}
-	fmt.Printf("%s - %s, %s\n",date,string(location[1]),string(location[2]))
+	city_state := strings.TrimSuffix(string(location[2])," US")
+
+	fmt.Printf("%s - %s, %s\n",date,string(location[1]),city_state)
 	return
 }
 
@@ -60,12 +62,18 @@ func locationByLines(filename string,verbose bool) {
     }
     defer file.Close()
 
+	re := regexp.MustCompile("(.*)\\s*(\\d{2}-\\d{2}-\\d{2})")
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
+		line := scanner.Text()
 		if verbose {
-			log.Print(scanner.Text())
+			log.Print(line)
 		}
-		locationByDate(scanner.Text(),verbose,true)
+		parts := re.FindSubmatch([]byte(line))
+		fmt.Print(string(parts[1]))
+		if len(parts)>1 {
+			locationByDate(string(parts[2]),verbose,true)
+		}
     }
 
     if err := scanner.Err(); err != nil {
