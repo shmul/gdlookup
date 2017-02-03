@@ -1,19 +1,21 @@
 package main
 
 import (
-	"fmt"
+	"bufio"
 	"flag"
-	"time"
-	"log"
-	"strings"
-	"net/http"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 	"regexp"
+	"strings"
+	"time"
 )
 
 const urlPrefix = "http://www.dead.net/show"
 
-func locationByDate(date string,verbose bool) {
+func locationByDate(date string,verbose bool,cont bool) {
 	re := regexp.MustCompile(">([^>]+)</a></h3>.+>([^<]+)</a></h4>")
 	t, err := time.Parse("06-01-02",date)
 	if err!=nil {
@@ -38,19 +40,49 @@ func locationByDate(date string,verbose bool) {
 	}
 	location := re.FindSubmatch([]byte(body))
 	if location==nil {
+		if cont {
+			fmt.Println(date)
+			return
+		}
 		if verbose {
 			log.Fatal("no such show")
 		}
 		return
 	}
-	fmt.Printf("%s, %s",string(location[1]),string(location[2]))
+	fmt.Printf("%s - %s, %s\n",date,string(location[1]),string(location[2]))
 	return
+}
+
+func locationByLines(filename string,verbose bool) {
+	file, err := os.Open(filename)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer file.Close()
+
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+		if verbose {
+			log.Print(scanner.Text())
+		}
+		locationByDate(scanner.Text(),verbose,true)
+    }
+
+    if err := scanner.Err(); err != nil {
+        log.Fatal(err)
+    }
 }
 
 func main() {
 	date := flag.String("d","","The show's date YY-MM-DD")
+	file := flag.String("f","","File which contains date lines of format YY-MM-DD")
 	verbose := flag.Bool("v",false,"Verbose")
 	flag.Parse()
 
-	locationByDate(*date,*verbose)
+	if *date!="" {
+		locationByDate(*date,*verbose,false)
+	} else if file!=nil {
+		locationByLines(*file,*verbose)
+	}
+
 }
