@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"html"
 )
 
 const urlPrefix = "http://www.dead.net/show"
@@ -21,7 +22,9 @@ func locationByDate(date string, verbose bool, cont bool) {
 	if err != nil {
 		log.Fatal("Illegal date", date)
 	}
-
+	if t.Year()>2020 {
+		t = t.AddDate(-100,0,0)
+	}
 	searchString := fmt.Sprintf("%s/%s-%d-%d", urlPrefix,
 		strings.ToLower(t.Month().String()), int(t.Day()), t.Year())
 	if verbose {
@@ -51,7 +54,8 @@ func locationByDate(date string, verbose bool, cont bool) {
 	}
 	city_state := strings.TrimSuffix(string(location[2]), " US")
 
-	fmt.Printf("%s - %s, %s\n", date, string(location[1]), city_state)
+	fmt.Printf("%s - %s, %s\n", date, html.UnescapeString(string(location[1])),
+		html.UnescapeString(city_state))
 	return
 }
 
